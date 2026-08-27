@@ -42,6 +42,9 @@ jobs:
           while IFS= read -r TAG; do
             [ -z "$TAG" ] && continue
             if ! printf '%s\n' "$EXISTING_TAGS" | grep -Fxq "$TAG"; then
+              # Point the fork tag at the merged fork main so custom changes
+              # are present in every versioned artifact, too.
+              git tag -f "$TAG" main
               git push origin "refs/tags/$TAG"
               GH_TOKEN="${{ github.token }}" gh workflow run linux-release.yml --ref main -f ref="$TAG"
             fi
