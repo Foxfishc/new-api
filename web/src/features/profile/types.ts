@@ -83,6 +83,25 @@ export interface UserProfile {
   linux_do_id?: string
 }
 
+/** Seven-day rolling automatic group rule status. */
+export interface GroupRuleStatus {
+  user_id: number
+  current_group: string
+  qualified: boolean
+  changed: boolean
+  consumption_average: number
+  recharge_average: number
+  consumption_average_quota: number
+  recharge_average_quota: number
+  threshold_quota: number
+  window_days: number
+  currency: string
+  currency_symbol: string
+  qualified_group: string
+  fallback_group: string
+  evaluated_at: number
+}
+
 /**
  * Notification type
  */

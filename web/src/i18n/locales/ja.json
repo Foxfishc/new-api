@@ -5316,6 +5316,21 @@
     "Zero retention": "データ保持なし",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V 4",
-    "Zoom": "ズーム"
+    "Zoom": "ズーム",
+    "Group Rule Status": "Group Rule Status",
+    "See your recent averages and automatic group threshold": "See your recent averages and automatic group threshold",
+    "Refresh group rule status": "Refresh group rule status",
+    "7-day average consumption": "7-day average consumption",
+    "7-day average recharge": "7-day average recharge",
+    "Average charged amount per day": "Average charged amount per day",
+    "Includes redeemed codes": "Includes redeemed codes",
+    "Qualified for {{group}}": "Qualified for {{group}}",
+    "Working toward {{group}}": "Working toward {{group}}",
+    "Current group": "Current group",
+    "Threshold": "Threshold",
+    "Average consumption or recharge over the last {{days}} days must reach the threshold.": "Average consumption or recharge over the last {{days}} days must reach the threshold.",
+    "The system will keep you in {{group}} while either average meets the threshold.": "The system will keep you in {{group}} while either average meets the threshold.",
+    "When the threshold is reached, the system will switch you from {{fallback}} to {{qualified}}.": "When the threshold is reached, the system will switch you from {{fallback}} to {{qualified}}.",
+    "Failed to load group rule status": "Failed to load group rule status"
   }
 }

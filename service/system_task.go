@@ -87,6 +87,46 @@ func init() {
 	RegisterSystemTaskHandler(logCleanupHandler{})
 }
 
+// groupRuleHandler periodically evaluates the rolling seven-day group rule.
+// Enablement and cadence are environment-controlled so operators can disable
+// it while retaining the on-demand profile refresh endpoint.
+type groupRuleHandler struct{}
+
+func (groupRuleHandler) Type() string { return model.SystemTaskTypeGroupRule }
+
+func (groupRuleHandler) Enabled() bool {
+	return common.GetEnvOrDefaultBool("GROUP_RULE_AUTO_ENABLED", true)
+}
+
+func (groupRuleHandler) Interval() time.Duration {
+	minutes := common.GetEnvOrDefault("GROUP_RULE_AUTO_INTERVAL_MINUTES", 1440)
+	if minutes < 1 {
+		minutes = 1440
+	}
+	return time.Duration(minutes) * time.Minute
+}
+
+func (groupRuleHandler) NewPayload() any { return nil }
+
+func (groupRuleHandler) Run(ctx context.Context, task *model.SystemTask, runnerID string) {
+	if ctx.Err() != nil {
+		_ = model.FinishSystemTask(task.TaskID, runnerID, model.SystemTaskStatusFailed, nil, ctx.Err().Error())
+		return
+	}
+	evaluated, err := model.EvaluateManagedGroupRules()
+	if err != nil {
+		_ = model.FinishSystemTask(task.TaskID, runnerID, model.SystemTaskStatusFailed, nil, err.Error())
+		return
+	}
+	if err := model.FinishSystemTask(task.TaskID, runnerID, model.SystemTaskStatusSucceeded, map[string]int{"evaluated": evaluated}, ""); err != nil {
+		logSystemTaskLockError(ctx, task, err)
+	}
+}
+
+func init() {
+	RegisterSystemTaskHandler(groupRuleHandler{})
+}
+
 type LogCleanupPayload struct {
 	TargetTimestamp int64 `json:"target_timestamp"`
 	BatchSize       int   `json:"batch_size"`

@@ -87,6 +87,8 @@ func SetApiRouter(router *gin.Engine) {
 				selfRoute.POST("/sessions/revoke-others", middleware.DisableCache(), controller.RevokeOtherLoginSessions)
 				selfRoute.GET("/self/groups", controller.GetUserGroups)
 				selfRoute.GET("/self", controller.GetSelf)
+				selfRoute.GET("/self/group-rule-status", middleware.DisableCache(), controller.GetGroupRuleStatus)
+				selfRoute.POST("/self/group-rule-status/refresh", middleware.CriticalRateLimit(), middleware.DisableCache(), controller.GetGroupRuleStatus)
 				selfRoute.GET("/models", controller.GetUserModels)
 				selfRoute.PUT("/self", middleware.CriticalRateLimit(), middleware.DisableCache(), controller.UpdateSelf)
 				selfRoute.DELETE("/self", controller.DeleteSelf)

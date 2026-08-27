@@ -481,6 +481,11 @@ func GetAffCode(c *gin.Context) {
 func GetSelf(c *gin.Context) {
 	id := c.GetInt("id")
 	userRole := c.GetInt("role")
+	// Keep the profile's group and metrics current even when the user has not
+	// made a payment or API request since the previous evaluation.
+	if _, err := model.EvaluateAndApplyGroupRule(id); err != nil {
+		common.SysLog(fmt.Sprintf("failed to evaluate automatic group rule for user %d: %v", id, err))
+	}
 	user, err := model.GetUserById(id, false)
 	if err != nil {
 		common.ApiError(c, err)
@@ -500,6 +505,17 @@ func GetSelf(c *gin.Context) {
 		"data":    responseData,
 	})
 	return
+}
+
+// GetGroupRuleStatus returns the current user's seven-day rolling metrics and
+// applies any pending default <-> svip transition first.
+func GetGroupRuleStatus(c *gin.Context) {
+	status, err := model.EvaluateAndApplyGroupRule(c.GetInt("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, status)
 }
 
 // buildSelfUserData is the single safe dashboard-user DTO used by GetSelf,

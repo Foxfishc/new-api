@@ -28,6 +28,7 @@ import type {
   DeleteAccountRequest,
   CheckinStatusResponse,
   CheckinResponse,
+  GroupRuleStatus,
 } from './types'
 
 // ============================================================================
@@ -39,6 +40,22 @@ import type {
  */
 export async function getUserProfile(): Promise<ApiResponse<UserProfile>> {
   const res = await api.get('/api/user/self')
+  return res.data
+}
+
+/** Get the current user's rolling automatic group-rule metrics. */
+export async function getGroupRuleStatus(): Promise<
+  ApiResponse<GroupRuleStatus>
+> {
+  const res = await api.get('/api/user/self/group-rule-status')
+  return res.data
+}
+
+/** Recalculate and apply the current user's automatic group rule. */
+export async function refreshGroupRuleStatus(): Promise<
+  ApiResponse<GroupRuleStatus>
+> {
+  const res = await api.post('/api/user/self/group-rule-status/refresh')
   return res.data
 }
 

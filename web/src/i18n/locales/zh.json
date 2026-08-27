@@ -5316,6 +5316,21 @@
     "Zero retention": "零数据保留",
     "Zhipu": "智谱",
     "Zhipu V4": "智谱 V4",
-    "Zoom": "缩放"
+    "Zoom": "缩放",
+    "Group Rule Status": "分组规则状态",
+    "See your recent averages and automatic group threshold": "查看近期平均值与自动分组阈值",
+    "Refresh group rule status": "刷新分组规则状态",
+    "7-day average consumption": "7天平均消费",
+    "7-day average recharge": "7天平均充值",
+    "Average charged amount per day": "近7天按天计算的平均消费",
+    "Includes redeemed codes": "包含兑换码充值",
+    "Qualified for {{group}}": "已达到 {{group}} 条件",
+    "Working toward {{group}}": "正在向 {{group}} 条件努力",
+    "Current group": "当前分组",
+    "Threshold": "阈值",
+    "Average consumption or recharge over the last {{days}} days must reach the threshold.": "近 {{days}} 天平均消费或充值达到阈值即可自动分组。",
+    "The system will keep you in {{group}} while either average meets the threshold.": "任一平均值达到阈值时，系统会保持 {{group}} 分组。",
+    "When the threshold is reached, the system will switch you from {{fallback}} to {{qualified}}.": "达到阈值后，系统会将你从 {{fallback}} 自动切换到 {{qualified}}。",
+    "Failed to load group rule status": "加载分组规则状态失败"
   }
 }

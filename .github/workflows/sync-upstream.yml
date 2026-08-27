@@ -7,21 +7,42 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - name: Sync main from upstream
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           ref: main
 
       - name: Fast-forward fork main
         run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          EXISTING_TAGS=$(git ls-remote --tags origin 'refs/tags/v*' | sed -E 's#.*refs/tags/##; s#\^\{\}$##' | sort -u)
           git remote add upstream https://github.com/QuantumNous/new-api.git
-          git fetch upstream main
+          git fetch upstream main --tags
           git checkout main
-          git merge --ff-only upstream/main
+          # A merge commit preserves custom commits while incorporating the
+          # latest upstream changes. Custom files live outside upstream's
+          # workflow set, so routine updates remain conflict-free.
+          git merge --no-edit upstream/main
           git push origin main
+
+          # GITHUB_TOKEN pushes do not recursively trigger workflows, so
+          # explicitly dispatch the Linux build for every upstream update.
+          GH_TOKEN="${{ github.token }}" gh workflow run linux-release.yml --ref main -f ref=main
+
+          # Propagate new upstream release tags and dispatch tagged builds.
+          while IFS= read -r TAG; do
+            [ -z "$TAG" ] && continue
+            if ! printf '%s\n' "$EXISTING_TAGS" | grep -Fxq "$TAG"; then
+              git push origin "refs/tags/$TAG"
+              GH_TOKEN="${{ github.token }}" gh workflow run linux-release.yml --ref main -f ref="$TAG"
+            fi
+          done < <(git tag -l 'v*' | sort -u)

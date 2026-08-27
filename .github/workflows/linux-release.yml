@@ -1,0 +1,168 @@
+name: Linux release and container
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or tag to build (defaults to main)
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: linux-release-${{ github.ref }}-${{ inputs.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linux-binary:
+    name: Linux binary (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            goarch: amd64
+          - arch: arm64
+            goarch: arm64
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      checkout_ref: ${{ steps.version.outputs.checkout_ref }}
+      release: ${{ steps.version.outputs.release }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          REF="${{ inputs.ref }}"
+          if [ -z "$REF" ]; then REF="${GITHUB_REF_NAME}"; fi
+          if git rev-parse "refs/tags/$REF" >/dev/null 2>&1; then
+            VERSION="$REF"
+            IS_RELEASE=true
+          elif git rev-parse "refs/heads/$REF" >/dev/null 2>&1; then
+            VERSION="${REF//\//-}-$(git rev-parse --short "$REF")"
+            IS_RELEASE=false
+          else
+            echo "::error::Ref '$REF' does not exist"
+            exit 1
+          fi
+          echo "$VERSION" > VERSION
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "checkout_ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '1.4.0'
+
+      - name: Build frontend
+        working-directory: web
+        env:
+          CI: ''
+          VITE_REACT_APP_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            relaykit/go.sum
+
+      - name: Build Linux binary
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+          GOWORK: off
+        run: |
+          go build -trimpath -ldflags "-s -w -X github.com/QuantumNous/new-api/common.Version=${{ steps.version.outputs.version }}" -o "new-api-linux-${{ matrix.arch }}"
+          sha256sum "new-api-linux-${{ matrix.arch }}" > "new-api-linux-${{ matrix.arch }}.sha256"
+
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: new-api-linux-${{ matrix.arch }}-${{ steps.version.outputs.version }}
+          path: |
+            new-api-linux-${{ matrix.arch }}
+            new-api-linux-${{ matrix.arch }}.sha256
+
+  release:
+    name: Publish GitHub release assets
+    needs: linux-binary
+    if: needs.linux-binary.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: new-api-linux-*-${{ needs.linux-binary.outputs.version }}
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish release
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
+        with:
+          tag_name: ${{ needs.linux-binary.outputs.version }}
+          files: release-assets/*
+
+  container:
+    name: Publish Linux Docker image
+    needs: linux-binary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.linux-binary.outputs.checkout_ref }}
+
+      - name: Resolve image metadata
+        id: meta
+        shell: bash
+        run: |
+          echo "${{ needs.linux-binary.outputs.version }}" > VERSION
+          echo "image=ghcr.io/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c99871dec2022cc055c062a10cc1a1310835ceb4 # v4.3.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Build and push Linux image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}:${{ needs.linux-binary.outputs.version }}
+            ${{ steps.meta.outputs.image }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.linux-binary.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

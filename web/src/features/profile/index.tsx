@@ -25,6 +25,7 @@ import { useStatus } from '@/hooks/use-status'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { CheckinCalendarCard } from './components/checkin-calendar-card'
+import { GroupRuleStatusCard } from './components/group-rule-status-card'
 import { LanguagePreferencesCard } from './components/language-preferences-card'
 import { LoginSessionsCard } from './components/login-sessions-card'
 import { PasskeyCard } from './components/passkey-card'
@@ -63,6 +64,7 @@ export function Profile() {
                   loading={loading}
                   onProfileUpdate={refreshProfile}
                 />
+                <GroupRuleStatusCard onProfileUpdate={refreshProfile} />
                 <LanguagePreferencesCard
                   profile={profile}
                   onProfileUpdate={refreshProfile}
