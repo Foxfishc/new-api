@@ -38,14 +38,12 @@ jobs:
           # explicitly dispatch the Linux build for every upstream update.
           GH_TOKEN="${{ github.token }}" gh workflow run linux-release.yml --ref main -f ref=main
 
-          # Propagate upstream release tags plus a custom tag that points at
-          # the merged fork commit. Only the -plus tag triggers a release.
+          # Create a custom tag that points at the merged fork commit. Only
+          # the -plus tag is pushed, so upstream's unmodified release tag
+          # cannot trigger a non-plus build in this fork.
           while IFS= read -r TAG; do
             [ -z "$TAG" ] && continue
             PLUS_TAG="${TAG}-plus"
-            if ! printf '%s\n' "$EXISTING_TAGS" | grep -Fxq "$TAG"; then
-              git push origin "refs/tags/$TAG"
-            fi
             if ! printf '%s\n' "$EXISTING_TAGS" | grep -Fxq "$PLUS_TAG"; then
               # Point the custom tag at the merged fork main so all versioned
               # artifacts include the fork's feature commits.
