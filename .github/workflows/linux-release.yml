@@ -3,7 +3,7 @@ name: Linux release and container
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*-plus'
   workflow_dispatch:
     inputs:
       ref:
@@ -52,9 +52,13 @@ jobs:
           if [ -z "$REF" ]; then REF="${GITHUB_REF_NAME}"; fi
           if git rev-parse "refs/tags/$REF" >/dev/null 2>&1; then
             VERSION="$REF"
+            case "$VERSION" in
+              *-plus) ;;
+              *) VERSION="${VERSION}-plus" ;;
+            esac
             IS_RELEASE=true
           elif git rev-parse "refs/heads/$REF" >/dev/null 2>&1; then
-            VERSION="${REF//\//-}-$(git rev-parse --short "$REF")"
+            VERSION="${REF//\//-}-$(git rev-parse --short "$REF")-plus"
             IS_RELEASE=false
           else
             echo "::error::Ref '$REF' does not exist"
