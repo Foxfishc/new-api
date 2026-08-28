@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -171,6 +172,8 @@ func InitOptionMap() {
 	common.OptionMap["CheckSensitiveOnPromptEnabled"] = strconv.FormatBool(setting.CheckSensitiveOnPromptEnabled)
 	common.OptionMap["StopOnSensitiveEnabled"] = strconv.FormatBool(setting.StopOnSensitiveEnabled)
 	common.OptionMap["SensitiveWords"] = setting.SensitiveWordsToString()
+	common.OptionMap["CyberAutoBanEnabled"] = strconv.FormatBool(setting.CyberAutoBanEnabled)
+	common.OptionMap["CyberAutoBanThreshold"] = strconv.Itoa(setting.CyberAutoBanThreshold)
 	common.OptionMap["StreamCacheQueueLength"] = strconv.Itoa(setting.StreamCacheQueueLength)
 	common.OptionMap["AutomaticDisableKeywords"] = operation_setting.AutomaticDisableKeywordsToString()
 	common.OptionMap["AutomaticDisableStatusCodes"] = operation_setting.AutomaticDisableStatusCodesToString()
@@ -206,6 +209,13 @@ func SyncOptions(frequency int) {
 }
 
 func validateOptionValue(key string, value string) error {
+	if key == "CyberAutoBanThreshold" {
+		threshold, err := strconv.Atoi(strings.TrimSpace(value))
+		if err != nil || threshold < 0 || threshold > 1000000 {
+			return fmt.Errorf("invalid CyberAutoBanThreshold: must be an integer from 0 to 1000000")
+		}
+		return nil
+	}
 	if key == operation_setting.ToolPriceOptionKey {
 		return operation_setting.ValidateToolPricesJSON(value)
 	}
@@ -378,6 +388,8 @@ func updateOptionMap(key string, value string) (err error) {
 			setting.ModelRequestRateLimitEnabled = boolValue
 		case "StopOnSensitiveEnabled":
 			setting.StopOnSensitiveEnabled = boolValue
+		case "CyberAutoBanEnabled":
+			setting.CyberAutoBanEnabled = boolValue
 		case "SMTPSSLEnabled":
 			common.SMTPSSLEnabled = boolValue
 		case "SMTPStartTLSEnabled":
@@ -588,6 +600,12 @@ func updateOptionMap(key string, value string) (err error) {
 		common.QuotaPerUnit, _ = strconv.ParseFloat(value, 64)
 	case "SensitiveWords":
 		setting.SensitiveWordsFromString(value)
+	case "CyberAutoBanThreshold":
+		threshold, parseErr := strconv.Atoi(strings.TrimSpace(value))
+		if parseErr != nil || threshold < 0 {
+			return fmt.Errorf("invalid CyberAutoBanThreshold: %s", value)
+		}
+		setting.CyberAutoBanThreshold = threshold
 	case "AutomaticDisableKeywords":
 		operation_setting.AutomaticDisableKeywordsFromString(value)
 	case "AutomaticDisableStatusCodes":

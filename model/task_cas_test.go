@@ -45,6 +45,7 @@ func TestMain(m *testing.M) {
 		&TwoFA{},
 		&TwoFABackupCode{},
 		&Log{},
+		&CyberPolicyEvent{},
 		&Channel{},
 		&QuotaData{},
 		&Ability{},

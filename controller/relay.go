@@ -377,6 +377,9 @@ func processChannelError(c *gin.Context, channelError types.ChannelError, err *t
 			service.DisableChannel(channelError, err.ErrorWithStatusCode())
 		})
 	}
+	if mark := service.GetCyberPolicy(c); mark != nil {
+		service.HandleCyberPolicyEvent(c, mark)
+	}
 
 	if (constant.ErrorLogEnabled || service.IsCyberPolicyError(err) || service.GetCyberPolicy(c) != nil) && types.IsRecordErrorLog(err) {
 		// 保存错误日志到mysql中
@@ -401,6 +404,8 @@ func processChannelError(c *gin.Context, channelError types.ChannelError, err *t
 			other["cyber_policy"] = true
 			other["cyber_policy_code"] = mark.Code
 			other["upstream_status_code"] = mark.UpstreamStatus
+			other["cyber_policy_count"] = mark.EventCount
+			other["cyber_auto_banned"] = mark.AutoBanned
 			adminInfo["cyber_policy_message"] = common.LocalLogPreview(common.MaskSensitiveInfo(mark.Message))
 			adminInfo["upstream_cyber_body"] = common.LocalLogPreview(common.MaskSensitiveInfo(mark.Body))
 		}

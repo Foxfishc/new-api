@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { RateLimitSection } from '../request-limits/rate-limit-section'
+import { CyberPolicySection } from '../request-limits/cyber-policy-section'
 import { SensitiveWordsSection } from '../request-limits/sensitive-words-section'
 import { SSRFSection } from '../request-limits/ssrf-section'
 import { TokenLimitSection } from '../request-limits/token-limit-section'
@@ -50,6 +51,18 @@ const SECURITY_SECTIONS = [
           CheckSensitiveEnabled: settings.CheckSensitiveEnabled,
           CheckSensitiveOnPromptEnabled: settings.CheckSensitiveOnPromptEnabled,
           SensitiveWords: settings.SensitiveWords,
+        }}
+      />
+    ),
+  },
+  {
+    id: 'cyber-policy',
+    titleKey: 'Cyber Policy',
+    build: (settings: SecuritySettings) => (
+      <CyberPolicySection
+        defaultValues={{
+          CyberAutoBanEnabled: settings.CyberAutoBanEnabled,
+          CyberAutoBanThreshold: settings.CyberAutoBanThreshold,
         }}
       />
     ),

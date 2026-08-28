@@ -227,6 +227,15 @@ func UpdateOption(c *gin.Context) {
 			})
 			return
 		}
+	case "CyberAutoBanThreshold":
+		threshold, parseErr := strconv.Atoi(strings.TrimSpace(option.Value.(string)))
+		if parseErr != nil || threshold < 0 || threshold > 1000000 {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": "Cyber 自动封禁次数必须是 0 到 1000000 之间的整数",
+			})
+			return
+		}
 	case "GroupRatio":
 		err = ratio_setting.CheckGroupRatio(option.Value.(string))
 		if err != nil {

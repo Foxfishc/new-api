@@ -832,6 +832,19 @@ export function DetailsDialog(props: DetailsDialogProps) {
                 mono
               />
             )}
+            {other.cyber_policy_count != null && (
+              <DetailRow
+                label={t('Cyber event count')}
+                value={String(other.cyber_policy_count)}
+                mono
+              />
+            )}
+            {other.cyber_auto_banned === true && (
+              <DetailRow
+                label={t('Automatic ban')}
+                value={t('User was automatically banned')}
+              />
+            )}
             {other.admin_info?.cyber_policy_message && (
               <DetailRow
                 label={t('Upstream Message')}
