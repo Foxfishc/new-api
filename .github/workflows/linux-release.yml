@@ -3,7 +3,7 @@ name: Linux release and container
 on:
   push:
     tags:
-      - 'v*-plus'
+      - 'v*-plus*'
   workflow_dispatch:
     inputs:
       ref:
