@@ -49,6 +49,11 @@ func ShouldDisableChannel(err *types.NewAPIError) bool {
 	if err == nil {
 		return false
 	}
+	if IsCyberPolicyError(err) {
+		// cyber_policy is a user/request policy decision, not an unhealthy
+		// provider credential or channel. Never auto-disable the channel.
+		return false
+	}
 	if types.IsChannelError(err) {
 		return true
 	}

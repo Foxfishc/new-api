@@ -109,6 +109,13 @@ func OaiResponsesToChatBufferedStreamHandler(c *gin.Context, info *relaycommon.R
 			streamErr = types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
 			break
 		}
+		if hit, message := service.DetectCyberPolicy([]byte(data)); hit {
+			service.MarkCyberPolicy(c, service.CyberPolicyMark{
+				Message:        message,
+				Body:           data,
+				UpstreamStatus: resp.StatusCode,
+			})
+		}
 		accumulator.ProcessEvent(&streamResp)
 		switch streamResp.Type {
 		case "response.completed", "response.done", "response.incomplete":

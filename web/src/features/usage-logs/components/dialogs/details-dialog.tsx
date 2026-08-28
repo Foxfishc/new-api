@@ -813,6 +813,40 @@ export function DetailsDialog(props: DetailsDialogProps) {
           </DetailSection>
         )}
 
+        {/* Upstream cyber policy marker (admin only) */}
+        {props.isAdmin && other?.cyber_policy === true && (
+          <DetailSection
+            icon={<ShieldCheck className='size-3.5' aria-hidden='true' />}
+            label={t('Cyber Policy')}
+            variant='danger'
+          >
+            <DetailRow
+              label={t('Error Code')}
+              value={other.cyber_policy_code || 'cyber_policy'}
+              mono
+            />
+            {other.upstream_status_code != null && (
+              <DetailRow
+                label={t('Status Code')}
+                value={String(other.upstream_status_code)}
+                mono
+              />
+            )}
+            {other.admin_info?.cyber_policy_message && (
+              <DetailRow
+                label={t('Upstream Message')}
+                value={other.admin_info.cyber_policy_message}
+              />
+            )}
+            {other.admin_info?.upstream_cyber_body && (
+              <DetailRow
+                label={t('Upstream Evidence')}
+                value={other.admin_info.upstream_cyber_body}
+              />
+            )}
+          </DetailSection>
+        )}
+
         {/* Reject reason (admin only) */}
         {props.isAdmin && other?.reject_reason && (
           <DetailSection

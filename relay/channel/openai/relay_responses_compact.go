@@ -24,6 +24,15 @@ func OaiResponsesCompactionHandler(c *gin.Context, resp *http.Response) (*dto.Us
 	if err := common.Unmarshal(responseBody, &compactResp); err != nil {
 		return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
 	}
+	if hit, message := service.DetectCyberPolicy(responseBody); hit {
+		mark := service.CyberPolicyMark{
+			Message:        message,
+			Body:           string(responseBody),
+			UpstreamStatus: resp.StatusCode,
+		}
+		service.MarkCyberPolicy(c, mark)
+		return nil, service.CyberPolicyError(&mark)
+	}
 	if oaiError := compactResp.GetOpenAIError(); oaiError != nil && oaiError.Type != "" {
 		return nil, types.WithOpenAIError(*oaiError, resp.StatusCode)
 	}

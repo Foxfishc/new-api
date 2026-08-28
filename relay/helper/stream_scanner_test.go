@@ -15,6 +15,7 @@ import (
 
 	"github.com/QuantumNous/new-api/constant"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -97,6 +98,21 @@ func TestStreamScannerHandler_EmptyBody(t *testing.T) {
 	})
 
 	assert.False(t, called.Load(), "handler should not be called for empty body")
+}
+
+func TestStreamScannerHandlerMarksCyberPolicyPayload(t *testing.T) {
+	c, resp, info := setupStreamTest(t, strings.NewReader(
+		"data: {\"type\":\"response.failed\",\"response\":{\"error\":{\"code\":\"cyber_policy\",\"message\":\"blocked\"}}}\n"))
+
+	StreamScannerHandler(c, resp, info, func(data string, sr *StreamResult) {
+		assert.Contains(t, data, "cyber_policy")
+	})
+
+	mark := service.GetCyberPolicy(c)
+	require.NotNil(t, mark)
+	assert.Equal(t, service.CyberPolicyCode, mark.Code)
+	assert.Equal(t, "blocked", mark.Message)
+	assert.Equal(t, http.StatusOK, mark.UpstreamStatus)
 }
 
 func TestStreamScannerHandler_1000Chunks(t *testing.T) {

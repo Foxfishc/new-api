@@ -248,6 +248,15 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 	if err != nil {
 		return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
 	}
+	if hit, message := service.DetectCyberPolicy(responseBody); hit {
+		mark := service.CyberPolicyMark{
+			Message:        message,
+			Body:           string(responseBody),
+			UpstreamStatus: resp.StatusCode,
+		}
+		service.MarkCyberPolicy(c, mark)
+		return nil, service.CyberPolicyError(&mark)
+	}
 
 	if oaiError := simpleResponse.GetOpenAIError(); oaiError != nil && oaiError.Type != "" {
 		return nil, types.WithOpenAIError(*oaiError, resp.StatusCode)

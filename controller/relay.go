@@ -229,10 +229,14 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 
 		if newAPIError == nil {
+			if mark := service.GetCyberPolicy(c); mark != nil {
+				service.RecordCyberPolicyErrorLog(c, mark)
+			}
 			relayInfo.LastError = nil
 			return
 		}
 
+		service.MarkCyberPolicyFromError(c, newAPIError)
 		newAPIError = service.NormalizeViolationFeeError(newAPIError)
 		relayInfo.LastError = newAPIError
 
@@ -335,6 +339,9 @@ func shouldRetry(c *gin.Context, openaiErr *types.NewAPIError, retryTimes int) b
 	if service.ShouldSkipRetryAfterChannelAffinityFailure(c) {
 		return false
 	}
+	if service.IsCyberPolicyError(openaiErr) || service.GetCyberPolicy(c) != nil {
+		return false
+	}
 	if types.IsChannelError(openaiErr) {
 		return true
 	}
@@ -361,6 +368,7 @@ func shouldRetry(c *gin.Context, openaiErr *types.NewAPIError, retryTimes int) b
 }
 
 func processChannelError(c *gin.Context, channelError types.ChannelError, err *types.NewAPIError) {
+	service.MarkCyberPolicyFromError(c, err)
 	logger.LogError(c, fmt.Sprintf("channel error (channel #%d, status code: %d): %s", channelError.ChannelId, err.StatusCode, common.LocalLogPreview(err.Error())))
 	// 不要使用context获取渠道信息，异步处理时可能会出现渠道信息不一致的情况
 	// do not use context to get channel info, there may be inconsistent channel info when processing asynchronously
@@ -370,7 +378,7 @@ func processChannelError(c *gin.Context, channelError types.ChannelError, err *t
 		})
 	}
 
-	if constant.ErrorLogEnabled && types.IsRecordErrorLog(err) {
+	if (constant.ErrorLogEnabled || service.IsCyberPolicyError(err) || service.GetCyberPolicy(c) != nil) && types.IsRecordErrorLog(err) {
 		// 保存错误日志到mysql中
 		userId := c.GetInt("id")
 		tokenName := c.GetString("token_name")
@@ -389,6 +397,13 @@ func processChannelError(c *gin.Context, channelError types.ChannelError, err *t
 		other["channel_name"] = c.GetString("channel_name")
 		other["channel_type"] = c.GetInt("channel_type")
 		adminInfo := make(map[string]interface{})
+		if mark := service.GetCyberPolicy(c); mark != nil {
+			other["cyber_policy"] = true
+			other["cyber_policy_code"] = mark.Code
+			other["upstream_status_code"] = mark.UpstreamStatus
+			adminInfo["cyber_policy_message"] = common.LocalLogPreview(common.MaskSensitiveInfo(mark.Message))
+			adminInfo["upstream_cyber_body"] = common.LocalLogPreview(common.MaskSensitiveInfo(mark.Body))
+		}
 		adminInfo["use_channel"] = c.GetStringSlice("use_channel")
 		isMultiKey := common.GetContextKeyBool(c, constant.ContextKeyChannelIsMultiKey)
 		if isMultiKey {
