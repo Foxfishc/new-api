@@ -5,6 +5,7 @@ on:
     tags:
       - '*'
       - '!nightly*'
+      - '!*-plus*'
   workflow_dispatch:
     inputs:
       tag:

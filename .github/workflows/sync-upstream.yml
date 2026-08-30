@@ -51,4 +51,4 @@ jobs:
               git push origin "refs/tags/$PLUS_TAG"
               GH_TOKEN="${{ github.token }}" gh workflow run linux-release.yml --ref main -f ref="$PLUS_TAG"
             fi
-          done < <(git tag -l 'v*' | grep -v -- '-plus$' | sort -u)
+          done < <(git tag -l 'v*' | grep -v -- '-plus' | sort -u)

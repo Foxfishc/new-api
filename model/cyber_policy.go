@@ -48,6 +48,7 @@ func RecordCyberPolicyEvent(userId int, requestId string, channelId int, modelNa
 		result.Threshold = 0
 	}
 
+	autoBanApplied := false
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		var user User
 		if err := lockForUpdate(tx.Unscoped()).Where("id = ?", userId).First(&user).Error; err != nil {
@@ -92,7 +93,8 @@ func RecordCyberPolicyEvent(userId int, requestId string, channelId int, modelNa
 				if updated.Error != nil {
 					return updated.Error
 				}
-				result.AutoBanned = updated.RowsAffected == 1
+				autoBanApplied = updated.RowsAffected == 1
+				result.AutoBanned = autoBanApplied
 			}
 		}
 
@@ -107,7 +109,7 @@ func RecordCyberPolicyEvent(userId int, requestId string, channelId int, modelNa
 	if err != nil {
 		return result, fmt.Errorf("record cyber policy event: %w", err)
 	}
-	if result.AutoBanned {
+	if autoBanApplied {
 		if err := PublishUserAuthCache(userId); err != nil {
 			return result, fmt.Errorf("publish auto-banned user cache: %w", err)
 		}

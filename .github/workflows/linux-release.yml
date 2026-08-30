@@ -53,7 +53,7 @@ jobs:
           if git rev-parse "refs/tags/$REF" >/dev/null 2>&1; then
             VERSION="$REF"
             case "$VERSION" in
-              *-plus) ;;
+              *-plus*) ;;
               *) VERSION="${VERSION}-plus" ;;
             esac
             IS_RELEASE=true
