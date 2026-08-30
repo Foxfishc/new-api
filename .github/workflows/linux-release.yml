@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - 'v*-plus*'
+  workflow_call:
+    inputs:
+      ref:
+        description: Branch or tag to build (defaults to the triggering ref)
+        required: false
+        default: ''
+        type: string
   workflow_dispatch:
     inputs:
       ref:

@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   sync:
+    outputs:
+      latest_plus_tag: ${{ steps.sync.outputs.latest_plus_tag }}
     runs-on: ubuntu-latest
     steps:
       - name: Sync main from upstream
@@ -20,6 +22,7 @@ jobs:
           ref: main
 
       - name: Fast-forward fork main
+        id: sync
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -34,13 +37,10 @@ jobs:
           git merge --no-edit upstream/main
           git push origin main
 
-          # GITHUB_TOKEN pushes do not recursively trigger workflows, so
-          # explicitly dispatch the Linux build for every upstream update.
-          GH_TOKEN="${{ github.token }}" gh workflow run linux-release.yml --ref main -f ref=main
-
           # Create a custom tag that points at the merged fork commit. Only
           # the -plus tag is pushed, so upstream's unmodified release tag
           # cannot trigger a non-plus build in this fork.
+          LATEST_PLUS_TAG=""
           while IFS= read -r TAG; do
             [ -z "$TAG" ] && continue
             PLUS_TAG="${TAG}-plus"
@@ -49,6 +49,15 @@ jobs:
               # artifacts include the fork's feature commits.
               git tag -f "$PLUS_TAG" main
               git push origin "refs/tags/$PLUS_TAG"
-              GH_TOKEN="${{ github.token }}" gh workflow run linux-release.yml --ref main -f ref="$PLUS_TAG"
+              LATEST_PLUS_TAG="$PLUS_TAG"
             fi
-          done < <(git tag -l 'v*' | grep -v -- '-plus' | sort -u)
+          done < <(git tag -l 'v*' | grep -v -- '-plus' | sort -V -u)
+          echo "latest_plus_tag=$LATEST_PLUS_TAG" >> "$GITHUB_OUTPUT"
+
+  build-latest-release:
+    needs: sync
+    if: needs.sync.outputs.latest_plus_tag != ''
+    uses: ./.github/workflows/linux-release.yml
+    with:
+      ref: ${{ needs.sync.outputs.latest_plus_tag }}
+    secrets: inherit
