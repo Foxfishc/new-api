@@ -115,9 +115,6 @@ export interface ToolSurchargeItem {
 }
 
 export interface LogOtherData {
-  cyber_policy?: boolean
-  cyber_policy_code?: string
-  upstream_status_code?: number
   admin_info?: {
     request_policy?: PolicyEvent[]
     is_multi_key?: boolean
@@ -138,8 +135,6 @@ export interface LogOtherData {
     admin_id?: number | string
     admin_role?: number
     auth_method?: 'session' | 'access_token' | string
-    cyber_policy_message?: string
-    upstream_cyber_body?: string
     // Quota saturation marker: set when a quota conversion clamped at the
     // supported single-request bound (overflow/underflow) or hit a NaN fallback while computing
     // this request's charge. Admin-only (nested under admin_info).

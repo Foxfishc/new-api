@@ -268,13 +268,6 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 			if data == "" {
 				continue
 			}
-			if hit, message := service.DetectCyberPolicy([]byte(data)); hit {
-				service.MarkCyberPolicy(c, service.CyberPolicyMark{
-					Message:        message,
-					Body:           data,
-					UpstreamStatus: http.StatusOK,
-				})
-			}
 			if !strings.HasPrefix(data, "[DONE]") {
 				info.SetFirstResponseTime()
 				info.ReceivedResponseCount++

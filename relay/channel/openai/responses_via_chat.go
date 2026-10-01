@@ -31,15 +31,6 @@ func OaiChatToResponsesHandler(c *gin.Context, info *relaycommon.RelayInfo, resp
 	if err := common.Unmarshal(body, &chatResp); err != nil {
 		return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
 	}
-	if hit, message := service.DetectCyberPolicy(body); hit {
-		mark := service.CyberPolicyMark{
-			Message:        message,
-			Body:           string(body),
-			UpstreamStatus: resp.StatusCode,
-		}
-		service.MarkCyberPolicy(c, mark)
-		return nil, service.CyberPolicyError(&mark)
-	}
 	if oaiError := chatResp.GetOpenAIError(); oaiError != nil && oaiError.Type != "" {
 		return nil, types.WithOpenAIError(*oaiError, resp.StatusCode)
 	}
@@ -127,13 +118,6 @@ func OaiChatToResponsesStreamHandler(c *gin.Context, info *relaycommon.RelayInfo
 
 		var errorResp dto.OpenAITextResponse
 		if err := common.UnmarshalJsonStr(data, &errorResp); err == nil {
-			if hit, message := service.DetectCyberPolicy([]byte(data)); hit {
-				service.MarkCyberPolicy(c, service.CyberPolicyMark{
-					Message:        message,
-					Body:           data,
-					UpstreamStatus: http.StatusOK,
-				})
-			}
 			if oaiError := errorResp.GetOpenAIError(); oaiError != nil && oaiError.Type != "" {
 				if failResponsesStream(fmt.Errorf("%s", oaiError.Message)) {
 					sr.Stop(streamErr)

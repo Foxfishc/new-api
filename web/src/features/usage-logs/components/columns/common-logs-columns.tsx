@@ -118,9 +118,6 @@ function buildDetailSegments(
 ): DetailSegment[] {
   const segments = buildTypeDetailSegments(log, other, t, language, usageSchema)
   const adminSegments: DetailSegment[] = []
-  if (isAdmin && other?.cyber_policy === true) {
-    adminSegments.push({ text: t('Cyber Policy'), danger: true })
-  }
   // Quota saturation is a rare, admin-only anomaly marker; surface it first
   // and in danger styling so it stands out on the related billing log. The
   // backend already strips admin_info for non-admins; gate on isAdmin too as
