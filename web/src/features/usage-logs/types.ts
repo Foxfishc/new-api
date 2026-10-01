@@ -117,8 +117,6 @@ export interface ToolSurchargeItem {
 export interface LogOtherData {
   cyber_policy?: boolean
   cyber_policy_code?: string
-  cyber_policy_count?: number
-  cyber_auto_banned?: boolean
   upstream_status_code?: number
   admin_info?: {
     request_policy?: PolicyEvent[]
