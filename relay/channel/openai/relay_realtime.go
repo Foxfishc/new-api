@@ -2,7 +2,6 @@ package openai
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
@@ -114,13 +113,6 @@ func OpenaiRealtimeHandler(c *gin.Context, info *relaycommon.RelayInfo) (*types.
 					}
 					close(targetClosed)
 					return
-				}
-				if hit, cyberMessage := service.DetectCyberPolicy(message); hit {
-					service.MarkCyberPolicy(c, service.CyberPolicyMark{
-						Message:        cyberMessage,
-						Body:           string(message),
-						UpstreamStatus: http.StatusOK,
-					})
 				}
 				info.SetFirstResponseTime()
 				realtimeEvent := &dto.RealtimeEvent{}

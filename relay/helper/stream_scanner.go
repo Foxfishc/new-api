@@ -40,9 +40,15 @@ func getScannerBufferSize() int {
 	return DefaultMaxScannerBufferSize
 }
 
-func NewStreamScanner(reader io.Reader) *bufio.Scanner {
+// NewStreamScanner shares relay scanner configuration. Callers buffering bounded
+// task state may additionally cap a line without increasing the configured limit.
+func NewStreamScanner(reader io.Reader, maxBytes ...int) *bufio.Scanner {
+	limit := getScannerBufferSize()
+	if len(maxBytes) > 0 && maxBytes[0] > 0 {
+		limit = min(limit, maxBytes[0])
+	}
 	scanner := bufio.NewScanner(reader)
-	scanner.Buffer(make([]byte, InitialScannerBufferSize), getScannerBufferSize())
+	scanner.Buffer(make([]byte, min(InitialScannerBufferSize, limit)), limit)
 	return scanner
 }
 
@@ -261,13 +267,6 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 			data = strings.TrimSpace(data)
 			if data == "" {
 				continue
-			}
-			if hit, message := service.DetectCyberPolicy([]byte(data)); hit {
-				service.MarkCyberPolicy(c, service.CyberPolicyMark{
-					Message:        message,
-					Body:           data,
-					UpstreamStatus: http.StatusOK,
-				})
 			}
 			if !strings.HasPrefix(data, "[DONE]") {
 				info.SetFirstResponseTime()
